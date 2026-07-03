@@ -1,0 +1,6 @@
+{
+  "name": "TARGOS PRESENÇA",
+  "description": "Sistema de controle de presença para obras.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
