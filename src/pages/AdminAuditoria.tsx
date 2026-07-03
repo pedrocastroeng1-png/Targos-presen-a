@@ -16,7 +16,7 @@ const mockFotos: AuditoriaFoto[] = Array.from({ length: 6 }).map((_, i) => ({
   id: `mock-${i}`,
   url: 'https://images.unsplash.com/photo-1541888086925-92058a5a452d?auto=format&fit=crop&w=500&q=60',
   funcionario_nome: `Funcionário Exemplo ${i + 1}`,
-  obra_nome: 'Casa Clube',
+  project_name: 'Casa Clube',
   operador_nome: 'Pedro Admin',
   data: format(new Date(), 'dd/MM/yyyy'),
   hora: `07:${10 + i}`,
@@ -44,7 +44,7 @@ export default function AdminAuditoria() {
   const [filtros, setFiltros] = useState({
     dataInicial: format(new Date(), 'yyyy-MM-dd'),
     dataFinal: format(new Date(), 'yyyy-MM-dd'),
-    obra: '',
+    project: '',
     funcionario: '',
     operador: '',
   });
@@ -88,11 +88,11 @@ export default function AdminAuditoria() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Obra (Opcional)</Label>
+              <Label>Projeto (Opcional)</Label>
               <Input 
-                placeholder="Nome da obra"
-                value={filtros.obra}
-                onChange={e => setFiltros({...filtros, obra: e.target.value})}
+                placeholder="Nome da project"
+                value={filtros.project}
+                onChange={e => setFiltros({...filtros, project: e.target.value})}
               />
             </div>
             <div className="space-y-2">
@@ -134,7 +134,7 @@ export default function AdminAuditoria() {
                   </div>
                 </div>
                 <div className="p-4 space-y-2 text-xs text-gray-600">
-                  <p className="flex items-center"><Building2 size={14} className="mr-2 text-gray-400" /> {foto.obra_nome}</p>
+                  <p className="flex items-center"><Building2 size={14} className="mr-2 text-gray-400" /> {foto.project_name}</p>
                   <p className="flex items-center"><Calendar size={14} className="mr-2 text-gray-400" /> {foto.data} às {foto.hora}</p>
                   <p className="flex items-center"><UserCircle2 size={14} className="mr-2 text-gray-400" /> Op: {foto.operador_nome}</p>
                 </div>
@@ -170,8 +170,8 @@ export default function AdminAuditoria() {
                     <p className="font-medium text-gray-900">{selectedFoto.funcionario_nome}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500 uppercase tracking-wider text-[10px] font-bold">Obra</p>
-                    <p className="font-medium text-gray-900">{selectedFoto.obra_nome}</p>
+                    <p className="text-gray-500 uppercase tracking-wider text-[10px] font-bold">Projeto</p>
+                    <p className="font-medium text-gray-900">{selectedFoto.project_name}</p>
                   </div>
                   <div>
                     <p className="text-gray-500 uppercase tracking-wider text-[10px] font-bold">Turno</p>

@@ -14,12 +14,12 @@ export default function Layout() {
 
   const navItems = [
     { name: 'Início', path: '/', icon: Home, show: true },
-    { name: 'Obras', path: '/obras', icon: Briefcase, show: true },
+    { name: 'Projetos', path: '/projects', icon: Briefcase, show: true },
     { name: 'Dashboard', path: '/dashboard', icon: BarChart3, show: isAdmin },
     { name: 'Relatórios', path: '/relatorios', icon: FileText, show: isAdmin },
     { name: 'Auditoria (Fotos)', path: '/admin/auditoria', icon: Camera, show: isAdmin },
     { name: 'Funcionários', path: '/admin/funcionarios', icon: Users, show: isAdmin },
-    { name: 'Gerenciar Obras', path: '/admin/obras', icon: HardHat, show: isAdmin },
+    { name: 'Gerenciar Projetos', path: '/admin/projects', icon: HardHat, show: isAdmin },
     { name: 'Usuários', path: '/admin/usuarios', icon: Settings, show: isAdmin },
   ];
 

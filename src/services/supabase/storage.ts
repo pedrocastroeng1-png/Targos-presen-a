@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 
 interface PhotoMetadata {
   funcionarioId: string;
-  obraId: string;
+  projectId: string;
   turno: string;
   data: string; // YYYY-MM-DD
   hora: string; // HH:mm:ss
@@ -30,7 +30,7 @@ export const storageService = {
       const folderTurno = metadata.turno === 'MANHA' ? 'morning' : 'afternoon';
 
       const fileName = `${metadata.funcionarioId}_${timestamp}.jpg`;
-      const filePath = `${year}/${month}/${day}/${metadata.obraId}/${folderTurno}/${fileName}`;
+      const filePath = `${year}/${month}/${day}/${metadata.projectId}/${folderTurno}/${fileName}`;
 
       const { data, error } = await supabase.storage
         .from('attendance-photos')

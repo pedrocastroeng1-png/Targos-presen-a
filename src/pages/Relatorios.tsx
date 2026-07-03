@@ -64,7 +64,7 @@ export default function Relatorios() {
           Data: format(new Date(session.attendance_date), 'dd/MM/yyyy'),
           Funcionário: item.employee?.full_name || 'N/A',
           Cargo: item.employee?.position?.name || 'N/A',
-          Obra: session.project?.name || 'N/A',
+          Projeto: session.project?.name || 'N/A',
           Status: item.status,
           'Fator Diária': item.daily_factor,
           Observação: item.observation || ''
@@ -100,7 +100,7 @@ export default function Relatorios() {
     });
 
     autoTable(doc, {
-      head: [['Data', 'Funcionário', 'Obra', 'Status', 'Fator', 'Obs']],
+      head: [['Data', 'Funcionário', 'Projeto', 'Status', 'Fator', 'Obs']],
       body: tableData,
       startY: 25,
     });

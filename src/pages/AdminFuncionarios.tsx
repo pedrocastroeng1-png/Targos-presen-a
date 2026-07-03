@@ -11,7 +11,7 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 export default function AdminFuncionarios() {
   const [funcionarios, setFuncionarios] = useState<Employee[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
-  const [obras, setObras] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -19,7 +19,7 @@ export default function AdminFuncionarios() {
   // Form State
   const [nome, setNome] = useState('');
   const [funcao, setFuncao] = useState('');
-    const [obraId, setObraId] = useState('');
+    const [projectId, setProjetoId] = useState('');
   const [active, setActive] = useState(true);
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function AdminFuncionarios() {
         supabase.from('positions').select('*').order('name')
       ]);
       setFuncionarios(fData || []);
-      setObras(oData || []);
+      setProjects(oData || []);
       setPositions(posData || []);
     } catch (error) {
       console.error(error);
@@ -48,13 +48,13 @@ export default function AdminFuncionarios() {
       setEditingId(f.id);
       setNome(f.nome);
       setFuncao(f.funcao);
-            setObraId(f.obra_id);
+            setProjetoId(f.project_id);
       setStatus(f.status);
     } else {
       setEditingId(null);
       setNome('');
       setFuncao('');
-            setObraId(obras[0]?.id || '');
+            setProjetoId(projects[0]?.id || '');
       setStatus('ATIVO');
     }
     setIsModalOpen(true);
@@ -67,7 +67,7 @@ export default function AdminFuncionarios() {
         nome,
         funcao,
         valor_diaria: 0,
-        obra_id: obraId,
+        project_id: projectId,
         status
       };
 
@@ -97,14 +97,14 @@ export default function AdminFuncionarios() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Funcionários</h1>
-          <p className="text-gray-500">Gerencie a equipe de todas as obras.</p>
+          <p className="text-gray-500">Gerencie a equipe de todas as projects.</p>
         </div>
         <Button onClick={() => openModal()} className="h-12"><Plus className="mr-2"/> Novo Funcionário</Button>
       </div>
 
       <div className="grid gap-4">
         {funcionarios.map(f => {
-          const obra = obras.find(o => o.id === f.project_id);
+          const project = projects.find(o => o.id === f.project_id);
           const pos = positions.find(p => p.id === f.position_id);
           return (
             <Card key={f.id}>
@@ -114,7 +114,7 @@ export default function AdminFuncionarios() {
                   <div className="text-sm text-gray-500 flex items-center space-x-2">
                     <span>{pos?.name || 'Cargo não encontrado'}</span>
                     <span>&bull;</span>
-                    <span>{obra?.name || 'Obra não encontrada'}</span>
+                    <span>{project?.name || 'Projeto não encontrada'}</span>
                     <span>&bull;</span>
                     <span className={f.active ? 'text-green-600' : 'text-red-600'}>{f.active ? 'ATIVO' : 'INATIVO'}</span>
                   </div>
@@ -147,12 +147,12 @@ export default function AdminFuncionarios() {
             </div>
             
             <div className="space-y-2">
-              <Label>Obra</Label>
+              <Label>Projeto</Label>
               <select 
                 className="flex h-12 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm"
-                value={obraId} onChange={e => setObraId(e.target.value)} required
+                value={projectId} onChange={e => setProjetoId(e.target.value)} required
               >
-                {obras.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                {projects.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
             </div>
             <div className="space-y-2">

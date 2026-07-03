@@ -13,31 +13,31 @@ export default function Home() {
   const [greeting, setGreeting] = useState('');
   const [dayMessage, setDayMessage] = useState('');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [obrasStatus, setObrasStatus] = useState<any[]>([]);
+  const [projectsStatus, setProjectsStatus] = useState<any[]>([]);
 
   useEffect(() => {
     // Update date occasionally
     const interval = setInterval(() => {
       setCurrentDate(new Date());
     }, 60000);
-    fetchObrasStatus();
+    fetchProjectsStatus();
     return () => clearInterval(interval);
   }, []);
 
-  const fetchObrasStatus = async () => {
+  const fetchProjectsStatus = async () => {
     const today = format(new Date(), 'yyyy-MM-dd');
     const { data } = await supabase.from('projects').select('*').eq('active', true).order('name');
     if (data) {
-      const status = data.map(obra => {
-        const manhaConcluido = localStorage.getItem(`turno_${obra.id}_${today}_MANHA`) === 'true';
-        const tardeConcluido = localStorage.getItem(`turno_${obra.id}_${today}_TARDE`) === 'true';
+      const status = data.map(project => {
+        const manhaConcluido = localStorage.getItem(`turno_${project.id}_${today}_MANHA`) === 'true';
+        const tardeConcluido = localStorage.getItem(`turno_${project.id}_${today}_TARDE`) === 'true';
         return {
-          ...obra,
+          ...project,
           manha: manhaConcluido,
           tarde: tardeConcluido
         };
       });
-      setObrasStatus(status);
+      setProjectsStatus(status);
     }
   };
 
@@ -86,7 +86,7 @@ export default function Home() {
 
       <div className="pt-8">
         <Button 
-          onClick={() => navigate('/obras')}
+          onClick={() => navigate('/projects')}
           className="w-full h-24 text-2xl rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 bg-blue-950 hover:bg-blue-900 text-white"
         >
           REGISTRAR PRESENÇA
@@ -97,18 +97,18 @@ export default function Home() {
       <div className="pt-12 space-y-4">
         <h2 className="text-xl font-bold text-gray-900 tracking-tight">Status de Hoje</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {obrasStatus.map(obra => (
-            <div key={obra.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col space-y-4">
+          {projectsStatus.map(project => (
+            <div key={project.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col space-y-4">
               <div className="flex items-center space-x-3 border-b pb-3">
                 <div className="bg-blue-50 p-2 rounded-lg text-blue-900">
                   <HardHat size={20} />
                 </div>
-                <h3 className="font-bold text-gray-900">{obra.name}</h3>
+                <h3 className="font-bold text-gray-900">{project.name}</h3>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col space-y-1">
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">MANHÃ</span>
-                  {obra.manha ? (
+                  {project.manha ? (
                     <div className="flex flex-col space-y-1 mt-1">
                       <span className="flex items-center text-green-600 font-medium text-sm">
                         <CheckCircle2 size={16} className="mr-1" /> Registrada
@@ -130,7 +130,7 @@ export default function Home() {
                 </div>
                 <div className="flex flex-col space-y-1">
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">TARDE</span>
-                  {obra.tarde ? (
+                  {project.tarde ? (
                     <span className="flex items-center text-green-600 font-medium text-sm">
                       <CheckCircle2 size={16} className="mr-1" /> Concluído
                     </span>

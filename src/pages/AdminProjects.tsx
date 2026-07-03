@@ -8,8 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 
-export default function AdminObras() {
-  const [obras, setObras] = useState<Project[]>([]);
+export default function AdminProjects() {
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -25,7 +25,7 @@ export default function AdminObras() {
   const fetchData = async () => {
     try {
       const { data } = await supabase.from('projects').select('*').order('nome');
-      setObras(data || []);
+      setProjects(data || []);
     } catch (error) {
       console.error(error);
     } finally {
@@ -65,7 +65,7 @@ export default function AdminObras() {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Excluir esta obra? (Verifique se não há funcionários vinculados)')) {
+    if (window.confirm('Excluir esta project? (Verifique se não há funcionários vinculados)')) {
       await supabase.from('projects').delete().eq('id', id);
       fetchData();
     }
@@ -77,14 +77,14 @@ export default function AdminObras() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Obras</h1>
-          <p className="text-gray-500">Gerencie as obras e canteiros.</p>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Projetos</h1>
+          <p className="text-gray-500">Gerencie as projects e canteiros.</p>
         </div>
-        <Button onClick={() => openModal()} className="h-12"><Plus className="mr-2"/> Nova Obra</Button>
+        <Button onClick={() => openModal()} className="h-12"><Plus className="mr-2"/> Nova Projeto</Button>
       </div>
 
       <div className="grid gap-4">
-        {obras.map(o => (
+        {projects.map(o => (
           <Card key={o.id}>
             <CardContent className="flex items-center justify-between p-4">
               <div>
@@ -103,11 +103,11 @@ export default function AdminObras() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingId ? 'Editar Obra' : 'Nova Obra'}</DialogTitle>
+            <DialogTitle>{editingId ? 'Editar Projeto' : 'Nova Projeto'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-2">
-              <Label>Nome da Obra</Label>
+              <Label>Nome da Projeto</Label>
               <Input value={nome} onChange={e => setNome(e.target.value)} required />
             </div>
             <div className="space-y-2">

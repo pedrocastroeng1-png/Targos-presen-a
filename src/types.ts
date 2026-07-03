@@ -146,7 +146,7 @@ export interface AuditoriaFoto {
   id: string;
   url: string;
   funcionario_nome: string;
-  obra_nome: string;
+  project_name: string;
   operador_nome: string;
   data: string;
   hora: string;
