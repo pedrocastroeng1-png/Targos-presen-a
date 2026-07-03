@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { HardHat, CheckCircle2, Hourglass } from 'lucide-react';
+import { HardHat, CheckCircle2, Hourglass, Camera, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 
 export default function Home() {
-  const { profile } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [greeting, setGreeting] = useState('');
   const [dayMessage, setDayMessage] = useState('');
@@ -61,6 +61,8 @@ export default function Home() {
     }
   }, [currentDate]);
 
+  const userName = user?.email?.split('@')[0].toUpperCase() || 'Equipe';
+
   return (
     <div className="h-full flex flex-col justify-center max-w-2xl mx-auto space-y-12 py-12">
       <div className="text-center space-y-6">
@@ -70,7 +72,7 @@ export default function Home() {
         
         <div className="space-y-2">
           <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
-            {greeting}, {profile?.name?.split(' ')[0] || 'Equipe'}
+            {greeting}, {userName}
           </h1>
           <p className="text-2xl text-blue-900 font-medium">
             {dayMessage}
@@ -107,13 +109,23 @@ export default function Home() {
                 <div className="flex flex-col space-y-1">
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">MANHÃ</span>
                   {obra.manha ? (
-                    <span className="flex items-center text-green-600 font-medium text-sm">
-                      <CheckCircle2 size={16} className="mr-1" /> Concluído
-                    </span>
+                    <div className="flex flex-col space-y-1 mt-1">
+                      <span className="flex items-center text-green-600 font-medium text-sm">
+                        <CheckCircle2 size={16} className="mr-1" /> Registrada
+                      </span>
+                      <span className="flex items-center text-gray-500 font-medium text-xs">
+                        <Camera size={12} className="mr-1" /> 18 Fotos (mock)
+                      </span>
+                    </div>
                   ) : (
-                    <span className="flex items-center text-orange-500 font-medium text-sm">
-                      <Hourglass size={16} className="mr-1" /> Pendente
-                    </span>
+                    <div className="flex flex-col space-y-1 mt-1">
+                      <span className="flex items-center text-orange-500 font-medium text-sm">
+                        <Hourglass size={16} className="mr-1" /> Pendente
+                      </span>
+                      <span className="flex items-center text-orange-400 font-medium text-xs">
+                        <AlertTriangle size={12} className="mr-1" /> Sem fotos
+                      </span>
+                    </div>
                   )}
                 </div>
                 <div className="flex flex-col space-y-1">

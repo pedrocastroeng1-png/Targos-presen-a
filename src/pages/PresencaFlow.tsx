@@ -17,7 +17,13 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { CheckCircle2, XCircle, Clock, Building, UserSquare2, ChevronLeft, UserMinus, Timer, Check, Users } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Building, UserSquare2, ChevronLeft, UserMinus, Timer, Check, Users, Camera as CameraIcon } from 'lucide-react';
+
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { storageService } from '@/services/supabase/storage';
+import { CameraCapture } from '@/components/CameraCapture';
+import { GeoLocation } from '@/types';
+
 
 export default function PresencaFlow() {
   const { id: obraId } = useParams<{ id: string }>();
@@ -39,6 +45,13 @@ export default function PresencaFlow() {
   // Faltou Modal State
   const [isFaltouModalOpen, setIsFaltouModalOpen] = useState(false);
   const [observacao, setObservacao] = useState('');
+
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [capturedLocation, setCapturedLocation] = useState<GeoLocation | null>(null);
+  const { requestLocation, loading: locationLoading } = useGeolocation();
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
   
   // Desligado Modal State
   const [isDesligadoModalOpen, setIsDesligadoModalOpen] = useState(false);
@@ -126,7 +139,7 @@ export default function PresencaFlow() {
     }
   };
 
-  const handlePresente = async () => {
+  const savePresencaDB = async (photoPath?: string) => {
     if (!currentFuncionario || !user || !obraId) return;
     
     try {
@@ -141,15 +154,18 @@ export default function PresencaFlow() {
         .single();
 
       if (existing) {
-        const { error } = await supabase.from('presencas').update({
+        const updateData: any = {
           status: 'PRESENTE',
           valor_pago: 0,
           usuario_id: user.id,
           hora: time
-        }).eq('id', existing.id);
+        };
+        if (photoPath) updateData.foto_path = photoPath;
+
+        const { error } = await supabase.from('presencas').update(updateData).eq('id', existing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('presencas').insert({
+        const insertData: any = {
           funcionario_id: currentFuncionario.id,
           obra_id: obraId,
           data: today,
@@ -157,7 +173,10 @@ export default function PresencaFlow() {
           usuario_id: user.id,
           status: 'PRESENTE',
           valor_pago: 0,
-        });
+        };
+        if (photoPath) insertData.foto_path = photoPath;
+
+        const { error } = await supabase.from('presencas').insert(insertData);
         if (error) throw error;
       }
       
@@ -168,6 +187,51 @@ export default function PresencaFlow() {
       alert('Erro ao registrar presença: ' + error.message);
     }
   };
+
+  const handlePresente = async () => {
+    if (turno === 'MANHA') {
+      try {
+        const loc = await requestLocation();
+        setCapturedLocation(loc);
+        setIsCameraOpen(true);
+      } catch (err: any) {
+        alert(err.message || 'A localização é obrigatória para registrar a presença.');
+      }
+    } else {
+      await savePresencaDB();
+    }
+  };
+
+  const handlePhotoCapture = (dataUrl: string) => {
+    setPhotoPreviewUrl(dataUrl);
+    setIsCameraOpen(false);
+  };
+
+  const confirmPresenteWithPhoto = async () => {
+    if (!photoPreviewUrl || !user || !currentFuncionario || !obra) return;
+    
+    setUploadingPhoto(true);
+    try {
+      const photoUrl = await storageService.uploadAttendancePhoto(photoPreviewUrl, {
+        funcionarioId: currentFuncionario.id,
+        obraId: obra.id,
+        turno: turno || 'MANHA',
+        data: format(new Date(), 'yyyy-MM-dd'),
+        hora: format(new Date(), 'HH:mm:ss'),
+        operadorId: user.id,
+        location: capturedLocation || undefined,
+      });
+      // Path salvo com sucesso. Avança o funcionário.
+      await savePresencaDB(photoUrl);
+      setPhotoPreviewUrl(null);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Falha ao enviar a fotografia.');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
 
   const openFaltouModal = () => {
     setObservacao('');
@@ -368,6 +432,7 @@ export default function PresencaFlow() {
             <Button
               onClick={handlePresente}
               variant="success"
+              disabled={locationLoading}
               className="h-20 text-xl font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center"
             >
               <CheckCircle2 size={28} className="mr-3" />
@@ -396,6 +461,43 @@ export default function PresencaFlow() {
           </div>
         </CardContent>
       </Card>
+
+      
+      {/* Camera Modal */}
+      <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
+        <DialogContent className="sm:max-w-md p-0 border-0 bg-transparent overflow-hidden shadow-none">
+          <DialogTitle className="sr-only">Câmera</DialogTitle>
+          <CameraCapture 
+            onCapture={handlePhotoCapture} 
+            onCancel={() => setIsCameraOpen(false)} 
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Photo Preview Modal */}
+      <Dialog open={!!photoPreviewUrl} onOpenChange={(open) => !open && !uploadingPhoto && setPhotoPreviewUrl(null)}>
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-white">
+          <DialogTitle className="sr-only">Confirmação de Foto</DialogTitle>
+          <div className="bg-white">
+            <img src={photoPreviewUrl || ''} alt="Preview" className="w-full h-auto max-h-[50vh] object-cover bg-black" />
+            <div className="p-5 space-y-3 text-sm text-gray-800 bg-gray-50 border-t">
+              <p><strong>Funcionário:</strong> {currentFuncionario?.nome}</p>
+              <p><strong>Obra:</strong> {obra?.nome}</p>
+              <p><strong>Turno:</strong> {turno === 'MANHA' ? 'MANHÃ' : 'TARDE'}</p>
+              <p><strong>Data:</strong> {format(new Date(), 'dd/MM/yyyy')}</p>
+              <p><strong>Hora:</strong> {format(new Date(), 'HH:mm')}</p>
+            </div>
+            <div className="p-4 flex gap-3 bg-white border-t">
+              <Button variant="outline" className="flex-1 h-12" onClick={() => { setPhotoPreviewUrl(null); setIsCameraOpen(true); }} disabled={uploadingPhoto}>
+                TIRAR NOVAMENTE
+              </Button>
+              <Button className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white font-bold" onClick={confirmPresenteWithPhoto} disabled={uploadingPhoto}>
+                {uploadingPhoto ? 'SALVANDO...' : 'USAR FOTO'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Faltou Modal */}
       <Dialog open={isFaltouModalOpen} onOpenChange={setIsFaltouModalOpen}>

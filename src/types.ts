@@ -41,3 +41,20 @@ export interface Presenca {
   observacao?: string;
   created_at?: string;
 }
+
+export interface GeoLocation {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+}
+
+export interface AuditoriaFoto {
+  id: string;
+  url: string;
+  funcionario_nome: string;
+  obra_nome: string;
+  operador_nome: string;
+  data: string;
+  hora: string;
+  turno: 'MANHA' | 'TARDE';
+}

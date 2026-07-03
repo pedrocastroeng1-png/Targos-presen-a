@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { authService } from '@/services/supabase/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,32 +20,20 @@ export default function Login() {
     setError(null);
 
     try {
-      // Append @targos.local behind the scenes to use Supabase Auth
-      const email = `${username.toLowerCase().trim()}@targos.local`;
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const data = await authService.signIn(username, password);
 
-      if (error) {
-        setError('Usuário ou senha incorretos');
-      } else if (data.user) {
+      if (data.user) {
         // Fetch role to redirect properly
-        const { data: profile } = await supabase
-          .from('usuarios')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
+        const role = await authService.getUserRole(data.user);
 
-        if (profile?.role === 'ADMIN') {
+        if (role === 'ADMIN') {
           navigate('/dashboard');
         } else {
           navigate('/');
         }
       }
     } catch (err: any) {
-      setError('Ocorreu um erro no login');
+      setError('Usuário ou senha incorretos');
     } finally {
       setLoading(false);
     }

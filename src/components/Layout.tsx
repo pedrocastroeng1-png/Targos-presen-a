@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { HardHat, Home, Users, Briefcase, BarChart3, Settings, LogOut, Menu, X, FileText } from 'lucide-react';
+import { HardHat, Home, Users, Briefcase, BarChart3, Settings, LogOut, Menu, X, FileText, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export default function Layout() {
-  const { profile, signOut } = useAuth();
+  const { role, user, signOut } = useAuth();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const isAdmin = profile?.role === 'ADMIN';
+  const isAdmin = role === 'ADMIN';
 
   const navItems = [
     { name: 'Início', path: '/', icon: Home, show: true },
     { name: 'Obras', path: '/obras', icon: Briefcase, show: true },
     { name: 'Dashboard', path: '/dashboard', icon: BarChart3, show: isAdmin },
     { name: 'Relatórios', path: '/relatorios', icon: FileText, show: isAdmin },
+    { name: 'Auditoria (Fotos)', path: '/admin/auditoria', icon: Camera, show: isAdmin },
     { name: 'Funcionários', path: '/admin/funcionarios', icon: Users, show: isAdmin },
     { name: 'Gerenciar Obras', path: '/admin/obras', icon: HardHat, show: isAdmin },
     { name: 'Usuários', path: '/admin/usuarios', icon: Settings, show: isAdmin },
@@ -24,6 +25,8 @@ export default function Layout() {
 
   const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const closeMenu = () => setIsMobileMenuOpen(false);
+  
+  const userName = user?.email?.split('@')[0].toUpperCase() || 'Usuário';
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
@@ -53,8 +56,8 @@ export default function Layout() {
         <div className="px-4 pb-4">
           <div className="bg-blue-900/50 rounded-xl p-4 mb-6 border border-blue-800/50">
             <p className="text-xs text-blue-300 font-medium uppercase tracking-wider mb-1">Olá,</p>
-            <p className="font-semibold truncate">{profile?.name || 'Usuário'}</p>
-            <p className="text-xs text-blue-300 mt-1">{profile?.role === 'ADMIN' ? 'Administrador' : 'Operador'}</p>
+            <p className="font-semibold truncate">{userName}</p>
+            <p className="text-xs text-blue-300 mt-1">{role === 'ADMIN' ? 'Administrador' : 'Operador'}</p>
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, createTempClient } from '@/lib/supabase';
 import { Profile } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,6 @@ import { Edit2, ShieldAlert, UserPlus, Shield } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { createClient } from '@supabase/supabase-js';
 
 export default function AdminUsuarios() {
   const [usuarios, setUsuarios] = useState<Profile[]>([]);
@@ -70,11 +69,7 @@ export default function AdminUsuarios() {
     try {
       if (isNewUserMode) {
         // Use a secondary client so it doesn't log the current admin out when signing up
-        const tempSupabase = createClient(
-          import.meta.env.VITE_SUPABASE_URL,
-          import.meta.env.VITE_SUPABASE_ANON_KEY,
-          { auth: { persistSession: false, autoRefreshToken: false } }
-        );
+        const tempSupabase = createTempClient();
 
         const email = `${username.toLowerCase().trim()}@targos.local`;
 

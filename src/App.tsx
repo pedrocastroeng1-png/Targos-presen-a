@@ -18,6 +18,7 @@ import Relatorios from './pages/Relatorios';
 import AdminFuncionarios from './pages/AdminFuncionarios';
 import AdminObras from './pages/AdminObras';
 import AdminUsuarios from './pages/AdminUsuarios';
+import AdminAuditoria from './pages/AdminAuditoria';
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/admin/funcionarios" element={<ProtectedRoute requiredRole="ADMIN"><AdminFuncionarios /></ProtectedRoute>} />
             <Route path="/admin/obras" element={<ProtectedRoute requiredRole="ADMIN"><AdminObras /></ProtectedRoute>} />
             <Route path="/admin/usuarios" element={<ProtectedRoute requiredRole="ADMIN"><AdminUsuarios /></ProtectedRoute>} />
+            <Route path="/admin/auditoria" element={<ProtectedRoute requiredRole="ADMIN"><AdminAuditoria /></ProtectedRoute>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

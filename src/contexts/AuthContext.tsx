@@ -1,12 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
-import { Profile } from '@/types';
+import { authService } from '@/services/supabase/auth';
 
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  profile: Profile | null;
+  role: 'ADMIN' | 'OPERATOR' | null;
   signOut: () => Promise<void>;
   loading: boolean;
 }
@@ -14,7 +13,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   session: null,
   user: null,
-  profile: null,
+  role: null,
   signOut: async () => {},
   loading: true,
 });
@@ -24,61 +23,56 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [role, setRole] = useState<'ADMIN' | 'OPERATOR' | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
+    // Restaurar sessão automaticamente quando o aplicativo abrir
+    const initSession = async () => {
+      try {
+        const currentSession = await authService.getSession();
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        if (currentSession?.user) {
+          const userRole = await authService.getUserRole(currentSession.user);
+          setRole(userRole);
+        }
+      } catch (error) {
+        console.error('Erro ao restaurar sessão:', error);
+      } finally {
         setLoading(false);
       }
-    });
+    };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
+    initSession();
+
+    // Listener de mudança de estado da autenticação
+    const subscription = authService.onAuthStateChange(async (_event, newSession) => {
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+      
+      if (newSession?.user) {
+        const userRole = await authService.getUserRole(newSession.user);
+        setRole(userRole);
       } else {
-        setProfile(null);
-        setLoading(false);
+        setRole(null);
       }
+      
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching profile:', error);
-      } else {
-        setProfile(data as Profile);
-      }
-    } catch (error) {
-      console.error('Error in fetchProfile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await authService.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, signOut, loading }}>
+    <AuthContext.Provider value={{ session, user, role, signOut, loading }}>
       {children}
     </AuthContext.Provider>
   );
 };
+

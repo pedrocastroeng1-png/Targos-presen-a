@@ -11,7 +11,7 @@ import { Obra } from '@/types';
 export default function TurnoSelection() {
   const { id: obraId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { role } = useAuth();
   const [obra, setObra] = useState<Obra | null>(null);
   
   const [selectedTurno, setSelectedTurno] = useState<'MANHA' | 'TARDE' | null>(null);
@@ -79,7 +79,7 @@ export default function TurnoSelection() {
                 <Eye className="mr-2" /> Visualizar
               </Button>
               
-              {profile?.role === 'ADMIN' && (
+              {role === 'ADMIN' && (
                 <Button variant="outline" className="h-14 px-8 text-lg" onClick={() => navigate(`/obras/${obraId}/presenca?turno=${selectedTurno}`)}>
                   <Edit className="mr-2" /> Editar
                 </Button>
