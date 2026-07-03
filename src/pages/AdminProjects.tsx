@@ -24,7 +24,11 @@ export default function AdminProjects() {
 
   const fetchData = async () => {
     try {
-      const { data } = await supabase.from('projects').select('*').order('nome');
+      const { data } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('active', true)
+        .order('name');
       setProjects(data || []);
     } catch (error) {
       console.error(error);
