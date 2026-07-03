@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Funcionario, Obra } from '@/types';
@@ -21,6 +21,10 @@ import { CheckCircle2, XCircle, Clock, Building, UserSquare2, ChevronLeft, UserM
 
 export default function PresencaFlow() {
   const { id: obraId } = useParams<{ id: string }>();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const turno = searchParams.get('turno') || 'MANHA';
+
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -83,22 +87,9 @@ export default function PresencaFlow() {
         .order('nome');
 
       if (funcError) throw funcError;
-      
-      // 3. Filter out those who already have a presence recorded today
-      const today = format(new Date(), 'yyyy-MM-dd');
-      const { data: presencasData, error: presencasError } = await supabase
-        .from('presencas')
-        .select('funcionario_id')
-        .eq('obra_id', obraId)
-        .eq('data', today);
-        
-      if (presencasError) throw presencasError;
-      
-      const funcionariosComPresencaHoje = new Set(presencasData.map(p => p.funcionario_id));
-      const pendingFuncionarios = funcData.filter(f => !funcionariosComPresencaHoje.has(f.id));
 
-      setFuncionarios(pendingFuncionarios);
-      if (pendingFuncionarios.length === 0) {
+      setFuncionarios(funcData);
+      if (funcData.length === 0) {
         finishFlow();
       }
     } catch (error) {
@@ -114,6 +105,8 @@ export default function PresencaFlow() {
   const finishFlow = () => {
     setSessionEndTime(new Date());
     setIsCompleted(true);
+    const today = format(new Date(), 'yyyy-MM-dd');
+    localStorage.setItem(`turno_${obraId}_${today}_${turno}`, 'true');
   };
 
   const getDurationString = () => {
@@ -140,17 +133,33 @@ export default function PresencaFlow() {
       const today = format(new Date(), 'yyyy-MM-dd');
       const time = format(new Date(), 'HH:mm:ss');
       
-      const { error } = await supabase.from('presencas').insert({
-        funcionario_id: currentFuncionario.id,
-        obra_id: obraId,
-        data: today,
-        hora: time,
-        usuario_id: user.id,
-        status: 'PRESENTE',
-        valor_pago: currentFuncionario.valor_diaria,
-      });
+      const { data: existing } = await supabase
+        .from('presencas')
+        .select('id')
+        .eq('funcionario_id', currentFuncionario.id)
+        .eq('data', today)
+        .single();
 
-      if (error) throw error;
+      if (existing) {
+        const { error } = await supabase.from('presencas').update({
+          status: 'PRESENTE',
+          valor_pago: 0,
+          usuario_id: user.id,
+          hora: time
+        }).eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('presencas').insert({
+          funcionario_id: currentFuncionario.id,
+          obra_id: obraId,
+          data: today,
+          hora: time,
+          usuario_id: user.id,
+          status: 'PRESENTE',
+          valor_pago: 0,
+        });
+        if (error) throw error;
+      }
       
       setSummary(s => ({ ...s, presentes: s.presentes + 1 }));
       advanceToNext();
@@ -173,18 +182,35 @@ export default function PresencaFlow() {
       const today = format(new Date(), 'yyyy-MM-dd');
       const time = format(new Date(), 'HH:mm:ss');
       
-      const { error } = await supabase.from('presencas').insert({
-        funcionario_id: currentFuncionario.id,
-        obra_id: obraId,
-        data: today,
-        hora: time,
-        usuario_id: user.id,
-        status: 'FALTOU',
-        valor_pago: 0,
-        observacao: observacao || undefined,
-      });
+      const { data: existing } = await supabase
+        .from('presencas')
+        .select('id')
+        .eq('funcionario_id', currentFuncionario.id)
+        .eq('data', today)
+        .single();
 
-      if (error) throw error;
+      if (existing) {
+        const { error } = await supabase.from('presencas').update({
+          status: 'FALTOU',
+          valor_pago: 0,
+          observacao: observacao || undefined,
+          usuario_id: user.id,
+          hora: time
+        }).eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('presencas').insert({
+          funcionario_id: currentFuncionario.id,
+          obra_id: obraId,
+          data: today,
+          hora: time,
+          usuario_id: user.id,
+          status: 'FALTOU',
+          valor_pago: 0,
+          observacao: observacao || undefined,
+        });
+        if (error) throw error;
+      }
       
       setSummary(s => ({ ...s, faltas: s.faltas + 1 }));
       setIsFaltouModalOpen(false);
@@ -239,6 +265,10 @@ export default function PresencaFlow() {
             </h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                <span className="text-gray-700 font-medium">Turno Registrado</span>
+                <span className="font-bold text-lg text-gray-900">{turno === 'MANHA' ? 'Manhã' : 'Tarde'}</span>
+              </div>
+              <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
                 <span className="text-gray-700 font-medium flex items-center"><Check className="text-green-500 mr-2" size={18} /> Presentes</span>
                 <span className="font-bold text-lg text-gray-900">{summary.presentes}</span>
               </div>
@@ -283,9 +313,14 @@ export default function PresencaFlow() {
           <ChevronLeft size={16} className="mr-1" /> Voltar
         </button>
         
-        <h1 className="text-2xl font-bold mb-6 flex items-center">
-          <Building className="mr-3 text-blue-400" size={28} />
-          {obra?.nome}
+        <h1 className="text-2xl font-bold mb-6 flex flex-col">
+          <span className="flex items-center">
+            <Building className="mr-3 text-blue-400" size={28} />
+            {obra?.nome}
+          </span>
+          <span className="text-blue-300 text-sm mt-2 font-medium bg-blue-900/50 self-start px-3 py-1 rounded-full">
+            Turno: {turno === 'MANHA' ? 'MANHÃ' : 'TARDE'}
+          </span>
         </h1>
         
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-blue-900/50 p-4 rounded-xl border border-blue-800/50 backdrop-blur-sm">

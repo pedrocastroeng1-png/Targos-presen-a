@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { HardHat } from 'lucide-react';
+import { HardHat, CheckCircle2, Hourglass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabase';
 
 export default function Home() {
   const { profile } = useAuth();
@@ -12,14 +13,33 @@ export default function Home() {
   const [greeting, setGreeting] = useState('');
   const [dayMessage, setDayMessage] = useState('');
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [obrasStatus, setObrasStatus] = useState<any[]>([]);
 
   useEffect(() => {
     // Update date occasionally
     const interval = setInterval(() => {
       setCurrentDate(new Date());
     }, 60000);
+    fetchObrasStatus();
     return () => clearInterval(interval);
   }, []);
+
+  const fetchObrasStatus = async () => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const { data } = await supabase.from('obras').select('*').eq('status', 'ATIVA').order('nome');
+    if (data) {
+      const status = data.map(obra => {
+        const manhaConcluido = localStorage.getItem(`turno_${obra.id}_${today}_MANHA`) === 'true';
+        const tardeConcluido = localStorage.getItem(`turno_${obra.id}_${today}_TARDE`) === 'true';
+        return {
+          ...obra,
+          manha: manhaConcluido,
+          tarde: tardeConcluido
+        };
+      });
+      setObrasStatus(status);
+    }
+  };
 
   useEffect(() => {
     const hour = currentDate.getHours();
@@ -69,6 +89,49 @@ export default function Home() {
         >
           REGISTRAR PRESENÇA
         </Button>
+      </div>
+
+      {/* Dashboard Section */}
+      <div className="pt-12 space-y-4">
+        <h2 className="text-xl font-bold text-gray-900 tracking-tight">Status de Hoje</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {obrasStatus.map(obra => (
+            <div key={obra.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col space-y-4">
+              <div className="flex items-center space-x-3 border-b pb-3">
+                <div className="bg-blue-50 p-2 rounded-lg text-blue-900">
+                  <HardHat size={20} />
+                </div>
+                <h3 className="font-bold text-gray-900">{obra.nome}</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col space-y-1">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">MANHÃ</span>
+                  {obra.manha ? (
+                    <span className="flex items-center text-green-600 font-medium text-sm">
+                      <CheckCircle2 size={16} className="mr-1" /> Concluído
+                    </span>
+                  ) : (
+                    <span className="flex items-center text-orange-500 font-medium text-sm">
+                      <Hourglass size={16} className="mr-1" /> Pendente
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">TARDE</span>
+                  {obra.tarde ? (
+                    <span className="flex items-center text-green-600 font-medium text-sm">
+                      <CheckCircle2 size={16} className="mr-1" /> Concluído
+                    </span>
+                  ) : (
+                    <span className="flex items-center text-orange-500 font-medium text-sm">
+                      <Hourglass size={16} className="mr-1" /> Pendente
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import ObrasSelection from './pages/ObrasSelection';
+import TurnoSelection from './pages/TurnoSelection';
 import PresencaFlow from './pages/PresencaFlow';
 import Dashboard from './pages/Dashboard';
 import Relatorios from './pages/Relatorios';
@@ -28,6 +29,7 @@ export default function App() {
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route path="/" element={<Home />} />
             <Route path="/obras" element={<ObrasSelection />} />
+            <Route path="/obras/:id/turno" element={<TurnoSelection />} />
             <Route path="/obras/:id/presenca" element={<PresencaFlow />} />
             
             {/* Admin Only Routes */}

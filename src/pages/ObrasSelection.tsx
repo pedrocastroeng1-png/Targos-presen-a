@@ -56,7 +56,7 @@ export default function ObrasSelection() {
             <Card 
               key={obra.id} 
               className="cursor-pointer hover:border-blue-500 hover:shadow-md transition-all group overflow-hidden"
-              onClick={() => navigate(`/obras/${obra.id}/presenca`)}
+              onClick={() => navigate(`/obras/${obra.id}/turno`)}
             >
               <div className="flex items-center p-6">
                 <div className="bg-blue-50 p-4 rounded-xl text-blue-900 mr-5 group-hover:bg-blue-900 group-hover:text-white transition-colors">
