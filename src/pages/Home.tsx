@@ -26,7 +26,7 @@ export default function Home() {
 
   const fetchObrasStatus = async () => {
     const today = format(new Date(), 'yyyy-MM-dd');
-    const { data } = await supabase.from('obras').select('*').eq('status', 'ATIVA').order('nome');
+    const { data } = await supabase.from('projects').select('*').eq('active', true).order('name');
     if (data) {
       const status = data.map(obra => {
         const manhaConcluido = localStorage.getItem(`turno_${obra.id}_${today}_MANHA`) === 'true';
@@ -103,7 +103,7 @@ export default function Home() {
                 <div className="bg-blue-50 p-2 rounded-lg text-blue-900">
                   <HardHat size={20} />
                 </div>
-                <h3 className="font-bold text-gray-900">{obra.nome}</h3>
+                <h3 className="font-bold text-gray-900">{obra.name}</h3>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col space-y-1">

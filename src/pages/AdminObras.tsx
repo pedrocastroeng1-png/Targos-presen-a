@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Obra } from '@/types';
+import { Project } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,14 +9,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 
 export default function AdminObras() {
-  const [obras, setObras] = useState<Obra[]>([]);
+  const [obras, setObras] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [nome, setNome] = useState('');
   const [endereco, setEndereco] = useState('');
-  const [status, setStatus] = useState<'ATIVA' | 'INATIVA'>('ATIVA');
+  const [active, setActive] = useState(true);
 
   useEffect(() => {
     fetchData();
@@ -24,7 +24,7 @@ export default function AdminObras() {
 
   const fetchData = async () => {
     try {
-      const { data } = await supabase.from('obras').select('*').order('nome');
+      const { data } = await supabase.from('projects').select('*').order('nome');
       setObras(data || []);
     } catch (error) {
       console.error(error);
@@ -33,17 +33,17 @@ export default function AdminObras() {
     }
   };
 
-  const openModal = (o?: Obra) => {
+  const openModal = (o?: Project) => {
     if (o) {
       setEditingId(o.id);
-      setNome(o.nome);
-      setEndereco(o.endereco || '');
-      setStatus(o.status);
+      setNome(o.name);
+      setEndereco(o.address || '');
+      setActive(o.active);
     } else {
       setEditingId(null);
       setNome('');
       setEndereco('');
-      setStatus('ATIVA');
+      setActive(true);
     }
     setIsModalOpen(true);
   };
@@ -51,11 +51,11 @@ export default function AdminObras() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const payload = { nome, endereco, status };
+      const payload = { name: nome, address: endereco, active };
       if (editingId) {
-        await supabase.from('obras').update(payload).eq('id', editingId);
+        await supabase.from('projects').update(payload).eq('id', editingId);
       } else {
-        await supabase.from('obras').insert([payload]);
+        await supabase.from('projects').insert([payload]);
       }
       setIsModalOpen(false);
       fetchData();
@@ -66,7 +66,7 @@ export default function AdminObras() {
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Excluir esta obra? (Verifique se não há funcionários vinculados)')) {
-      await supabase.from('obras').delete().eq('id', id);
+      await supabase.from('projects').delete().eq('id', id);
       fetchData();
     }
   };
@@ -88,8 +88,8 @@ export default function AdminObras() {
           <Card key={o.id}>
             <CardContent className="flex items-center justify-between p-4">
               <div>
-                <h3 className="font-bold text-lg">{o.nome}</h3>
-                <p className="text-sm text-gray-500">{o.endereco} &bull; <span className={o.status === 'ATIVA' ? 'text-green-600' : 'text-red-600'}>{o.status}</span></p>
+                <h3 className="font-bold text-lg">{o.name}</h3>
+                <p className="text-sm text-gray-500">{o.address} &bull; <span className={o.active ? 'text-green-600' : 'text-red-600'}>{(o.active ? 'Ativa' : 'Inativa')}</span></p>
               </div>
               <div className="flex space-x-2">
                 <Button variant="outline" size="icon" onClick={() => openModal(o)}><Edit2 size={16}/></Button>
@@ -118,10 +118,10 @@ export default function AdminObras() {
               <Label>Status</Label>
               <select 
                 className="flex h-12 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm"
-                value={status} onChange={e => setStatus(e.target.value as 'ATIVA' | 'INATIVA')} required
+                value={active ? 'true' : 'false'} onChange={e => setActive(e.target.value === 'true')} required
               >
-                <option value="ATIVA">Ativa</option>
-                <option value="INATIVA">Inativa</option>
+                <option value="true">Ativa</option>
+                <option value="false">Inativa</option>
               </select>
             </div>
             <DialogFooter>

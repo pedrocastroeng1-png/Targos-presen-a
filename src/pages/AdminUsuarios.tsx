@@ -19,7 +19,7 @@ export default function AdminUsuarios() {
   
   // Form state
   const [nome, setNome] = useState('');
-  const [username, setUsername] = useState('');
+  const [userfull_name, setUserfull_name] = useState('');
   const [senha, setSenha] = useState('');
   const [role, setRole] = useState<'ADMIN' | 'OPERATOR'>('OPERATOR');
   const [status, setStatus] = useState<'ATIVO' | 'INATIVO'>('ATIVO');
@@ -31,7 +31,7 @@ export default function AdminUsuarios() {
 
   const fetchData = async () => {
     try {
-      const { data } = await supabase.from('usuarios').select('*').order('name');
+      const { data } = await supabase.from('profiles').select('*').order('full_name');
       setUsuarios(data || []);
     } catch (error) {
       console.error(error);
@@ -44,7 +44,7 @@ export default function AdminUsuarios() {
     setIsNewUserMode(true);
     setEditingUser(null);
     setNome('');
-    setUsername('');
+    setUserfull_name('');
     setSenha('');
     setRole('OPERATOR');
     setStatus('ATIVO');
@@ -54,8 +54,8 @@ export default function AdminUsuarios() {
   const openEditModal = (u: Profile) => {
     setIsNewUserMode(false);
     setEditingUser(u);
-    setNome(u.name);
-    setUsername(u.username);
+    setNome(u.full_name);
+    setUserfull_name(u.userfull_name);
     setRole(u.role);
     setStatus(u.status);
     setSenha(''); // Keep empty, don't show existing
@@ -71,7 +71,7 @@ export default function AdminUsuarios() {
         // Use a secondary client so it doesn't log the current admin out when signing up
         const tempSupabase = createTempClient();
 
-        const email = `${username.toLowerCase().trim()}@targos.local`;
+        const email = `${userfull_name.toLowerCase().trim()}@targos.local`;
 
         // 1. Create auth user
         const { data: authData, error: authError } = await tempSupabase.auth.signUp({
@@ -81,14 +81,14 @@ export default function AdminUsuarios() {
 
         if (authError) throw authError;
 
-        // 2. Wait a moment for trigger to run, then update name, role, status
+        // 2. Wait a moment for trigger to run, then update full_name, role, status
         if (authData.user) {
           await new Promise(resolve => setTimeout(resolve, 1000));
 
           const { error: updateError } = await supabase
-            .from('usuarios')
+            .from('profiles')
             .update({
-              name: nome,
+              full_full_name: nome,
               role: role,
               status: status
             })
@@ -100,8 +100,8 @@ export default function AdminUsuarios() {
         // Edit mode
         if (!editingUser) return;
         const { error } = await supabase
-          .from('usuarios')
-          .update({ name: nome, role: role, status: status })
+          .from('profiles')
+          .update({ full_full_name: nome, role: role, status: status })
           .eq('id', editingUser.id);
           
         if (error) throw error;
@@ -121,7 +121,7 @@ export default function AdminUsuarios() {
     try {
       const newStatus = user.status === 'ATIVO' ? 'INATIVO' : 'ATIVO';
       const { error } = await supabase
-        .from('usuarios')
+        .from('profiles')
         .update({ status: newStatus })
         .eq('id', user.id);
 
@@ -158,8 +158,8 @@ export default function AdminUsuarios() {
                     {u.role === 'ADMIN' ? <ShieldAlert size={24} /> : <Shield size={24} />}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg text-gray-900">{u.name}</h3>
-                    <p className="text-sm text-gray-500 font-mono">@{u.username}</p>
+                    <h3 className="font-semibold text-lg text-gray-900">{u.full_name}</h3>
+                    <p className="text-sm text-gray-500 font-mono">@{u.userfull_name}</p>
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => openEditModal(u)}>
@@ -221,12 +221,12 @@ export default function AdminUsuarios() {
             <div className="space-y-2">
               <Label>Usuário (Login)</Label>
               <Input 
-                value={username} 
-                onChange={e => setUsername(e.target.value)} 
+                value={userfull_name} 
+                onChange={e => setUserfull_name(e.target.value)} 
                 required 
                 placeholder="Ex: JOAO"
                 autoCapitalize="none"
-                disabled={!isNewUserMode} // Não permite alterar username depois de criado
+                disabled={!isNewUserMode} // Não permite alterar userfull_name depois de criado
               />
               {!isNewUserMode && <p className="text-xs text-gray-500">O nome de usuário não pode ser alterado.</p>}
             </div>

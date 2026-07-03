@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Funcionario, Obra } from '@/types';
+import { Employee, Project, Position } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,8 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 
 export default function AdminFuncionarios() {
-  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
-  const [obras, setObras] = useState<Obra[]>([]);
+  const [funcionarios, setFuncionarios] = useState<Employee[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [obras, setObras] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -18,9 +19,8 @@ export default function AdminFuncionarios() {
   // Form State
   const [nome, setNome] = useState('');
   const [funcao, setFuncao] = useState('');
-  const [valorDiaria, setValorDiaria] = useState('');
-  const [obraId, setObraId] = useState('');
-  const [status, setStatus] = useState<'ATIVO' | 'INATIVO'>('ATIVO');
+    const [obraId, setObraId] = useState('');
+  const [active, setActive] = useState(true);
 
   useEffect(() => {
     fetchData();
@@ -28,12 +28,14 @@ export default function AdminFuncionarios() {
 
   const fetchData = async () => {
     try {
-      const [{ data: fData }, { data: oData }] = await Promise.all([
-        supabase.from('funcionarios').select('*').order('nome'),
-        supabase.from('obras').select('*').order('nome')
+      const [{ data: fData }, { data: oData }, { data: posData }] = await Promise.all([
+        supabase.from('employees').select('*, position:positions(name)').order('full_name', { ascending: true }),
+        supabase.from('projects').select('*').order('name'),
+        supabase.from('positions').select('*').order('name')
       ]);
       setFuncionarios(fData || []);
       setObras(oData || []);
+      setPositions(posData || []);
     } catch (error) {
       console.error(error);
     } finally {
@@ -41,20 +43,18 @@ export default function AdminFuncionarios() {
     }
   };
 
-  const openModal = (f?: Funcionario) => {
+  const openModal = (f?: Employee) => {
     if (f) {
       setEditingId(f.id);
       setNome(f.nome);
       setFuncao(f.funcao);
-      setValorDiaria(f.valor_diaria.toString());
-      setObraId(f.obra_id);
+            setObraId(f.obra_id);
       setStatus(f.status);
     } else {
       setEditingId(null);
       setNome('');
       setFuncao('');
-      setValorDiaria('');
-      setObraId(obras[0]?.id || '');
+            setObraId(obras[0]?.id || '');
       setStatus('ATIVO');
     }
     setIsModalOpen(true);
@@ -66,15 +66,15 @@ export default function AdminFuncionarios() {
       const payload = {
         nome,
         funcao,
-        valor_diaria: Number(valorDiaria),
+        valor_diaria: 0,
         obra_id: obraId,
         status
       };
 
       if (editingId) {
-        await supabase.from('funcionarios').update(payload).eq('id', editingId);
+        await supabase.from('employees').update(payload).eq('id', editingId);
       } else {
-        await supabase.from('funcionarios').insert([payload]);
+        await supabase.from('employees').insert([payload]);
       }
       setIsModalOpen(false);
       fetchData();
@@ -85,7 +85,7 @@ export default function AdminFuncionarios() {
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir?')) {
-      await supabase.from('funcionarios').delete().eq('id', id);
+      await supabase.from('employees').delete().eq('id', id);
       fetchData();
     }
   };
@@ -104,18 +104,19 @@ export default function AdminFuncionarios() {
 
       <div className="grid gap-4">
         {funcionarios.map(f => {
-          const obra = obras.find(o => o.id === f.obra_id);
+          const obra = obras.find(o => o.id === f.project_id);
+          const pos = positions.find(p => p.id === f.position_id);
           return (
             <Card key={f.id}>
               <CardContent className="flex items-center justify-between p-4">
                 <div>
-                  <h3 className="font-bold text-lg">{f.nome}</h3>
+                  <h3 className="font-bold text-lg">{f.full_name}</h3>
                   <div className="text-sm text-gray-500 flex items-center space-x-2">
-                    <span>{f.funcao}</span>
+                    <span>{pos?.name || 'Cargo não encontrado'}</span>
                     <span>&bull;</span>
-                    <span>{obra?.nome || 'Obra não encontrada'}</span>
+                    <span>{obra?.name || 'Obra não encontrada'}</span>
                     <span>&bull;</span>
-                    <span className={f.status === 'ATIVO' ? 'text-green-600' : 'text-red-600'}>{f.status}</span>
+                    <span className={f.active ? 'text-green-600' : 'text-red-600'}>{f.active ? 'ATIVO' : 'INATIVO'}</span>
                   </div>
                 </div>
                 <div className="flex space-x-2">
@@ -139,30 +140,29 @@ export default function AdminFuncionarios() {
               <Input value={nome} onChange={e => setNome(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label>Função</Label>
-              <Input value={funcao} onChange={e => setFuncao(e.target.value)} required />
+              <Label>Cargo</Label>
+              <select className="flex h-12 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm" value={funcao} onChange={e => setFuncao(e.target.value)} required>
+                {positions.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
             </div>
-            <div className="space-y-2">
-              <Label>Valor Diária (R$)</Label>
-              <Input type="number" step="0.01" value={valorDiaria} onChange={e => setValorDiaria(e.target.value)} required />
-            </div>
+            
             <div className="space-y-2">
               <Label>Obra</Label>
               <select 
                 className="flex h-12 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm"
                 value={obraId} onChange={e => setObraId(e.target.value)} required
               >
-                {obras.map(o => <option key={o.id} value={o.id}>{o.nome}</option>)}
+                {obras.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
               <select 
                 className="flex h-12 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm"
-                value={status} onChange={e => setStatus(e.target.value as 'ATIVO' | 'INATIVO')} required
+                value={active ? 'true' : 'false'} onChange={e => setActive(e.target.value === 'true')} required
               >
-                <option value="ATIVO">Ativo</option>
-                <option value="INATIVO">Inativo</option>
+                <option value="true">Ativo</option>
+                <option value="false">Inativo</option>
               </select>
             </div>
             <DialogFooter>

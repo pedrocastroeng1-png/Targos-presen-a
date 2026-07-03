@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { Obra } from '@/types';
+import { Project } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Building2, ChevronRight, HardHat } from 'lucide-react';
 
 export default function ObrasSelection() {
-  const [obras, setObras] = useState<Obra[]>([]);
+  const [obras, setObras] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -17,10 +17,10 @@ export default function ObrasSelection() {
   const fetchObras = async () => {
     try {
       const { data, error } = await supabase
-        .from('obras')
+        .from('projects')
         .select('*')
-        .eq('status', 'ATIVA')
-        .order('nome');
+        .eq('active', true)
+        .order('name');
 
       if (error) throw error;
       setObras(data || []);
@@ -63,8 +63,8 @@ export default function ObrasSelection() {
                   <Building2 size={32} />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold text-gray-900">{obra.nome}</h3>
-                  {obra.endereco && <p className="text-sm text-gray-500 mt-1 line-clamp-1">{obra.endereco}</p>}
+                  <h3 className="text-xl font-bold text-gray-900">{obra.name}</h3>
+                  {obra.address && <p className="text-sm text-gray-500 mt-1 line-clamp-1">{obra.address}</p>}
                 </div>
                 <ChevronRight className="text-gray-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" size={24} />
               </div>

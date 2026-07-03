@@ -6,20 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Sun, Moon, Eye, Edit, Ban } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { Obra } from '@/types';
+import { Project } from '@/types';
 
 export default function TurnoSelection() {
   const { id: obraId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { role } = useAuth();
-  const [obra, setObra] = useState<Obra | null>(null);
+  const [obra, setObra] = useState<Project | null>(null);
   
   const [selectedTurno, setSelectedTurno] = useState<'MANHA' | 'TARDE' | null>(null);
   const [isRegistered, setIsRegistered] = useState(false);
 
   useEffect(() => {
     if (obraId) {
-      supabase.from('obras').select('*').eq('id', obraId).single().then(({ data }) => setObra(data));
+      supabase.from('projects').select('*').eq('id', obraId).single().then(({ data }) => setObra(data));
     }
   }, [obraId]);
 
@@ -38,7 +38,7 @@ export default function TurnoSelection() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{obra?.nome}</h1>
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{obra?.name}</h1>
         <p className="text-gray-500 mt-2">Qual turno deseja registrar?</p>
       </div>
 

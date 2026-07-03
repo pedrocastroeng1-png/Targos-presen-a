@@ -47,12 +47,14 @@ export const authService = {
   async getUserRole(user: User | null): Promise<'ADMIN' | 'OPERATOR'> {
     if (!user || !user.email) return 'OPERATOR';
     
-    // Provisório: Baseado na regra de que PEDRO é admin.
-    // Futuramente aqui consultará a tabela "profiles" / "usuarios".
-    if (user.email === 'pedro@targos.local') {
-      return 'ADMIN';
+    try {
+      const { data, error } = await supabase.from('profiles').select('role').eq('auth_user_id', user.id).single();
+      if (!error && data) {
+        return data.role;
+      }
+    } catch (e) {
+      console.error(e);
     }
-    
     return 'OPERATOR';
   }
 };

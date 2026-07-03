@@ -24,18 +24,23 @@ export default function Relatorios() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('presencas')
+        .from('attendance_sessions')
         .select(`
-          data,
-          status,
-          valor_pago,
-          observacao,
-          funcionarios (nome, funcao),
-          obras (nome)
+          attendance_date,
+          project:projects (name),
+          items:attendance_items (
+            status,
+            observation,
+            daily_factor,
+            employee:employees (
+              full_name,
+              position:positions (name)
+            )
+          )
         `)
-        .gte('data', dataInicial)
-        .lte('data', dataFinal)
-        .order('data', { ascending: true });
+        .gte('attendance_date', dataInicial)
+        .lte('attendance_date', dataFinal)
+        .order('attendance_date', { ascending: true });
 
       if (error) throw error;
       return data;
@@ -52,15 +57,20 @@ export default function Relatorios() {
     const data = await fetchRelatorioData();
     if (!data || data.length === 0) return alert('Sem dados para este período');
 
-    const formattedData = data.map((row: any) => ({
-      Data: format(new Date(row.data), 'dd/MM/yyyy'),
-      Funcionário: row.funcionarios?.nome || 'N/A',
-      Função: row.funcionarios?.funcao || 'N/A',
-      Obra: row.obras?.nome || 'N/A',
-      Status: row.status,
-      'Valor Pago': row.valor_pago,
-      Observação: row.observacao || ''
-    }));
+    const formattedData: any[] = [];
+    data.forEach((session: any) => {
+      session.items?.forEach((item: any) => {
+        formattedData.push({
+          Data: format(new Date(session.attendance_date), 'dd/MM/yyyy'),
+          Funcionário: item.employee?.full_name || 'N/A',
+          Cargo: item.employee?.position?.name || 'N/A',
+          Obra: session.project?.name || 'N/A',
+          Status: item.status,
+          'Fator Diária': item.daily_factor,
+          Observação: item.observation || ''
+        });
+      });
+    });
 
     const ws = XLSX.utils.json_to_sheet(formattedData);
     const wb = XLSX.utils.book_new();
@@ -75,17 +85,22 @@ export default function Relatorios() {
     const doc = new jsPDF();
     doc.text(`Relatório de Presenças (${format(new Date(dataInicial), 'dd/MM/yyyy')} a ${format(new Date(dataFinal), 'dd/MM/yyyy')})`, 14, 15);
 
-    const tableData = data.map((row: any) => [
-      format(new Date(row.data), 'dd/MM/yyyy'),
-      row.funcionarios?.nome || 'N/A',
-      row.obras?.nome || 'N/A',
-      row.status,
-      `R$ ${row.valor_pago}`,
-      row.observacao || ''
-    ]);
+    const tableData: any[] = [];
+    data.forEach((session: any) => {
+      session.items?.forEach((item: any) => {
+        tableData.push([
+          format(new Date(session.attendance_date), 'dd/MM/yyyy'),
+          item.employee?.full_name || 'N/A',
+          session.project?.name || 'N/A',
+          item.status,
+          `${item.daily_factor}`,
+          item.observation || ''
+        ]);
+      });
+    });
 
     autoTable(doc, {
-      head: [['Data', 'Funcionário', 'Obra', 'Status', 'Valor', 'Obs']],
+      head: [['Data', 'Funcionário', 'Obra', 'Status', 'Fator', 'Obs']],
       body: tableData,
       startY: 25,
     });
